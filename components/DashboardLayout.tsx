@@ -15,6 +15,12 @@ import {
   where,
   onSnapshot,
 } from "firebase/firestore";
+import { Lancelot } from "next/font/google";
+
+const lancelot = Lancelot({
+  weight: "400",
+  subsets: ["latin"],
+});
 
 export default function DashboardLayout({
   children,
@@ -80,11 +86,24 @@ export default function DashboardLayout({
       >
         {/* TOP */}
         <div>
-          {/* LOGO */}
-          <div className="mb-8">
-            <h2 className="text-xl font-bold">Faculty Bridge</h2>
+          <div className="mb-10 flex items-center gap-3">
+            {/* LOGO */}
+            <div className="relative">
+              <div className="absolute inset-0 bg-purple-950 blur-2xl opacity-60 rounded-2xl" />
 
-            <p className="text-xs text-gray-400">Scheduling Platform</p>
+              <div className="relative w-12 h-12 rounded-2xl bg-gradient-to-br from-purple-950 via-purple-900 to-indigo-950 flex items-center justify-center shadow-xl shadow-black/40">
+                <span
+                  className={`${lancelot.className} text-white text-2xl tracking-wide`}
+                >
+                  FB
+                </span>
+              </div>
+            </div>
+
+            {/* TEXT */}
+            <h2 className="text-xl font-bold tracking-tight text-white">
+              Faculty Bridge
+            </h2>
           </div>
 
           {/* USER */}
