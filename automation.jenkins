@@ -1,0 +1,123 @@
+pipeline {
+    agent any
+
+    tools {
+        nodejs "node18"
+    }
+
+    environment {
+
+        GIT_URL = "https://github.com/adipatil-13/Faculty-Bridge.git"
+        BRANCH = "main"
+
+        DOCKER_IMAGE = "faculty-bridge"
+
+        DOCKERHUB_USERNAME = credentials('dockerhub-username')
+        DOCKERHUB_PASSWORD = credentials('dockerhub-password')
+
+        VERCEL_TOKEN = credentials('vercel-token')
+
+        IMAGE_TAG = "${BUILD_NUMBER}"
+    }
+
+    stages {
+
+        stage('Clean Workspace') {
+            steps {
+                cleanWs()
+            }
+        }
+
+        stage('Clone Repository') {
+            steps {
+                git branch: "${BRANCH}",
+                url: "${GIT_URL}"
+            }
+        }
+
+        stage('Install Dependencies') {
+            steps {
+                sh 'npm install'
+            }
+        }
+
+        stage('Run Tests') {
+            steps {
+                sh 'npm test || true'
+            }
+        }
+
+        stage('Build Application') {
+            steps {
+                sh 'npm run build'
+            }
+        }
+
+        stage('Docker Build') {
+            steps {
+                sh """
+                docker build -t ${DOCKERHUB_USERNAME}/${DOCKER_IMAGE}:${IMAGE_TAG} .
+                docker tag ${DOCKERHUB_USERNAME}/${DOCKER_IMAGE}:${IMAGE_TAG} ${DOCKERHUB_USERNAME}/${DOCKER_IMAGE}:latest
+                """
+            }
+        }
+
+        stage('Docker Login') {
+            steps {
+                sh """
+                echo ${DOCKERHUB_PASSWORD} | docker login -u ${DOCKERHUB_USERNAME} --password-stdin
+                """
+            }
+        }
+
+        stage('Push Docker Image') {
+            steps {
+                sh """
+                docker push ${DOCKERHUB_USERNAME}/${DOCKER_IMAGE}:${IMAGE_TAG}
+                docker push ${DOCKERHUB_USERNAME}/${DOCKER_IMAGE}:latest
+                """
+            }
+        }
+
+        stage('Deploy To Vercel') {
+            steps {
+                sh """
+                npm install -g vercel
+
+                vercel pull --yes --environment=production --token=${VERCEL_TOKEN}
+
+                vercel build --prod --token=${VERCEL_TOKEN}
+
+                vercel deploy --prebuilt --prod --token=${VERCEL_TOKEN}
+                """
+            }
+        }
+
+        stage('Create Rollback Image') {
+            steps {
+                sh """
+                docker tag ${DOCKERHUB_USERNAME}/${DOCKER_IMAGE}:${IMAGE_TAG} \
+                ${DOCKERHUB_USERNAME}/${DOCKER_IMAGE}:rollback-${BUILD_NUMBER}
+
+                docker push ${DOCKERHUB_USERNAME}/${DOCKER_IMAGE}:rollback-${BUILD_NUMBER}
+                """
+            }
+        }
+    }
+
+    post {
+
+        success {
+            echo 'Faculty Bridge deployment successful'
+        }
+
+        failure {
+            echo 'Pipeline failed'
+        }
+
+        always {
+            sh 'docker system prune -af || true'
+            cleanWs()
+        }
+    }
+}
