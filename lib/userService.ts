@@ -5,8 +5,10 @@ function getRoleFromEmail(email: string) {
   if (email === "adityapatil1308@gmail.com") return "admin";
   if (email === "aditya1patil1308@gmail.com") return "faculty";
   if (email === "adityapatil13official@gmail.com") return "faculty";
+  if (email === "aditya00003142462@gmail.com") return "faculty";
   if (email === "aditya2patil13@gmail.com") return "student";
   if (email === "kulkarniyash369@gmail.com") return "student";
+  if (email === "aditya2223849@gmail.com") return "student";
 
   return "student";
 }
